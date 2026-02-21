@@ -4,7 +4,7 @@ A little exercise to build a web application following an agile development proc
 
 ## Product vision statement
 
-See instructions. Delete this line and place the Product Vision Statement here.
+A simple, fast movie rating system where users search for movies, rate them out of 1-5 stars, and can write a short review. 
 
 ## User stories
 
