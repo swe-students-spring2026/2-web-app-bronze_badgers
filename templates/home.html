@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Movies</h1>
+{% if movies %}
+    {% for movie in movies %}
+    <div class="movie-card">
+        <h2>{{ movie.title }}</h2>
+        <p>Genre: {{ movie.genre }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No movies yet.</p>
+{% endif %}
+{% endblock %}
