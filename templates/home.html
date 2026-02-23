@@ -1,16 +1,65 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Movies</h1>
+{% extends "base_bottomnav.html" %} {% block content %}
+<!-- <h1>Movies</h1> -->
+<div class="search-bar">
+  {% if session.get("name") %}
+  <div class="avatar">{{ session["name"][0] | upper }}</div>
+  {% else %}
+  <a href="{{ url_for('login') }}" class="login-btn">Log In</a>
+  {% endif %}
+  <div class="form-group">
+    <form action="/" method="GET">
+      <input
+        type="text"
+        name="q"
+        class="main-search"
+        placeholder="Search movies..."
+      />
+    </form>
+  </div>
+</div>
+<!-- Filter Tabs -->
+<div class="filter-bar">
+  <i class="fa-solid fa-filter filter-icon"></i>
+  <a
+    href="{{ url_for('search', sort='recent') }}"
+    class="filter-tab {% if sort == 'recent' %}active{% endif %}"
+    >Recent</a
+  >
+  <a
+    href="{{ url_for('search', sort='popular') }}"
+    class="filter-tab {% if sort == 'popular' %}active{% endif %}"
+    >Popular</a
+  >
+  <a
+    href="{{ url_for('search', sort='rating') }}"
+    class="filter-tab {% if sort == 'rating' %}active{% endif %}"
+    >Rating</a
+  >
+</div>
+
+<!-- Movie Grid -->
 {% if movies %}
-    {% for movie in movies %}
-    <a href="{{ url_for('movie_detail', movie_id=movie._id) }}" class="movie-card-link">
+<div class="movie-grid">
+  {% for movie in movies %}
+  <a
+    href="{{ url_for('movie_detail', movie_id=movie._id) }}"
+    class="movie-card-link"
+  >
     <div class="movie-card">
-        <h2>{{ movie.title }}</h2>
-        <p>Genre: {{ movie.genre }}</p>
+      <h3 class="movie-title">{{ movie.title }}</h3>
+      <p class="movie-year">{{ movie.year }}</p>
+      <p class="movie-genre">
+        {{ movie.genres | join(', ') if movie.genres else '' }}
+      </p>
+      {% if movie.tomatoes and movie.tomatoes.viewer %}
+      <p class="movie-rating">
+        <i class="fa-solid fa-star"></i> {{ movie.tomatoes.viewer.rating }}/5
+      </p>
+      {% endif %}
     </div>
-    </a>
-    {% endfor %}
+  </a>
+  {% endfor %}
+</div>
 {% else %}
-    <p>No movies yet.</p>
-{% endif %}
-{% endblock %}
+<p class="no-results">No movies found.</p>
+{% endif %} {% endblock %}

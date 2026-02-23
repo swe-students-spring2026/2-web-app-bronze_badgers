@@ -25,10 +25,10 @@ reviews_collection = db.reviews  # we'll store movie reviews here
 # Home page
 @app.route("/")
 def home():
-    if "name" in session:
-        movies = list(db.movies.find())
-        return render_template("home.html", movies=movies)
-    return redirect(url_for("login"))
+    if "name" not in session:
+        return redirect(url_for("login"))
+    movies = list(db.movies.find().sort("year", -1).limit(20))
+    return render_template("home.html", movies=movies, query="", sort="recent")
 
 
 # Login page
@@ -290,6 +290,41 @@ def get_movie_reviews(movie_id):
         return jsonify({"success": True, "reviews": reviews}), 200
     except:
         return jsonify({"success": False, "message": "Invalid movie ID"}), 404
+
+# My Reviews
+@app.route("/my-reviews")
+def my_reviews():
+    if "name" not in session:
+        return redirect(url_for("login"))
+    reviews = list(reviews_collection.find({"user_name": session["name"]}))
+    return render_template("my_reviews.html", reviews=reviews)
+
+
+# Search
+
+@app.route("/search")
+def search():
+    if "name" not in session:
+        return redirect(url_for("login"))
+    
+    query = request.args.get("q", "")
+    sort = request.args.get("sort", "recent")
+    
+    # Build filter
+    filter_query = {}
+    if query:
+        filter_query["title"] = {"$regex": query, "$options": "i"}
+    
+    # Build sort
+    if sort == "rating":
+        sort_key = [("tomatoes.viewer.rating", -1)]
+    elif sort == "popular":
+        sort_key = [("tomatoes.viewer.numReviews", -1)]
+    else:  # recent
+        sort_key = [("year", -1)]
+    
+    movies = list(db.movies.find(filter_query).sort(sort_key).limit(20))
+    return render_template("home.html", movies=movies, query=query, sort=sort)
 
 
 if __name__ == "__main__":
