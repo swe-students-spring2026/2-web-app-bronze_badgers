@@ -30,7 +30,103 @@ A simple, fast movie rating system where users search for movies, rate them out 
 
 ## Steps necessary to run the software
 
-See instructions. Delete this line and place instructions to download, configure, and run the software here.
+### Step 0
+
+Before running the application, ensure you have the following installed on your local machine:
+
+- **Python 3** 
+- **MongoDB connection credentials** (MongoDB URI and database name)
+
+### Step 1: Clone the Repository
+
+Clone this repository to your local machine using Git:
+
+```bash
+git clone https://github.com/swe-students-spring2026/2-web-app-bronze_badgers.git
+cd 2-web-app-bronze_badgers
+```
+
+### Step 2: Set Up a Python Virtual Environment
+
+It is recommended to use a virtual environment to isolate project dependencies. Create and activate a virtual environment:
+
+**On macOS/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**On Windows:**
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+### Step 3: Install Dependencies
+
+Install all required Python packages using pip:
+
+```bash
+pip install -r requirements.txt
+```
+
+This will install the following packages:
+- `flask` - Web framework
+- `pymongo[srv]` - MongoDB driver
+- `python-dotenv` - Environment variable management
+- `flask-login` - User session management
+- `flask-bcrypt` - Password hashing
+- `certifi` - SSL certificate bundle
+
+### Step 4: Configure Environment Variables
+
+Create a `.env` file in the root directory of the project. This file contains sensitive credentials and should **not** be committed to version control.
+
+Create the `.env` file with the following variables:
+
+```env
+SECRET_KEY=your_secret_key_here
+MONGO_URI=your_mongodb_connection_string_here
+MONGO_DBNAME=your_database_name_here
+```
+
+**Important notes:**
+- Replace `your_secret_key_here` with a secure random string (used for Flask session encryption)
+- Replace `your_mongodb_connection_string_here` with your MongoDB connection URI (e.g., `mongodb+srv://username:password@cluster.mongodb.net/`)
+- Replace `your_database_name_here` with the name of your MongoDB database
+- If an `env.example` file exists in the repository, you can use it as a template
+- **Do not commit the `.env` file to Git** - it is already excluded via `.gitignore`
+
+### Step 5: Run the Application
+
+Start the Flask development server:
+
+```bash
+python app.py
+```
+
+Alternatively, you can use:
+
+```bash
+flask run
+```
+
+The application will start running on `http://127.0.0.1:5000` (or `http://localhost:5000`).
+
+### Step 6: Access the Application
+
+Open your web browser and navigate to:
+
+```
+http://127.0.0.1:5000
+```
+
+You will be redirected to the login page. If you don't have an account yet, you can register a new account through the registration page.
+
+### Troubleshooting
+- **MongoDB connection errors**: Verify your `MONGO_URI` in the `.env` file is correct and that your MongoDB cluster allows connections from your IP address
+- **Port already in use**: If port 5000 is already in use, you can specify a different port by setting the `FLASK_RUN_PORT` environment variable or modifying `app.py`
+- **Module not found**: Ensure you're running the application from the project root directory where `app.py` is located
 
 ## Task boards
 
