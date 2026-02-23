@@ -26,7 +26,10 @@ users_collection = db.users  # we'll store login users here
 @app.route("/")
 def home():
     if "name" in session:
-        return f"Hello, {session['name']}! <a href='/logout'>Logout</a>"
+        movies = list(db.movies.find())
+        return render_template("home.html", movies=movies)
+
+        # return f"Hello, {session['name']}! <a href='/logout'>Logout</a>"
     return redirect(url_for("login"))
 
 
