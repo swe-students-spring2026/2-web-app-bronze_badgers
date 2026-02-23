@@ -36,6 +36,75 @@ nav a {
     margin-bottom: 12px;
 }
 
+.movie-detail h1 {
+    margin-bottom: 8px;
+}
+
+.review-form-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.review-form-section h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.rating-row {
+    margin-bottom: 12px;
+}
+
+.rating-row label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.star-radios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+.star-label {
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.comment-row {
+    margin-bottom: 16px;
+}
+
+.comment-row label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.comment-row textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.save-review-btn {
+    padding: 10px 20px;
+    background: #57068c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.save-review-btn:hover {
+    opacity: 0.9;
+}
+
 /* Settings Page Styles */
 .settings-container {
     padding: 16px 0;

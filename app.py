@@ -235,7 +235,7 @@ def movie_detail(movie_id):
         return redirect(url_for("login"))
     try:
         oid = ObjectId(movie_id)
-    except InvalidId:
+    except:
         flash("Movie not found", "danger")
         return redirect(url_for("home"))
     movie = db.movies.find_one({"_id": oid})
