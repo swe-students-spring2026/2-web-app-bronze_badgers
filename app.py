@@ -5,6 +5,8 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 import certifi
+from bson.objectid import ObjectId
+from datetime import datetime, timezone
 
 load_dotenv()
 
@@ -16,6 +18,8 @@ bcrypt = Bcrypt(app)
 client = MongoClient(os.getenv("MONGO_URI"), tlsCAFile=certifi.where())
 db = client[os.getenv("MONGO_DBNAME")]
 users_collection = db.users  # we'll store login users here
+reviews_collection = db.reviews  # we'll store movie reviews here
+
 
 
 # Home page
@@ -222,5 +226,33 @@ def delete_account():
         return jsonify({"success": False, "message": "Failed to delete account"}), 500
 
 
+
+#Save Review + Comment
+@app.route("/api/movie/<movie_id>/review", methods=["POST"])
+def save_review(movie_id):
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    else:
+        oid = ObjectId(movie_id)
+        data = request.get_json()
+        stars = data.get("stars")
+        comment = data.get("comment", "").strip()
+        review_doc = {
+            "user_name": session["name"],
+            "movie_id": oid,
+            "stars": stars,
+            "comment": comment,
+            "updated_at": datetime.now(timezone.utc)
+        }
+        reviews_collection.update_one(
+            {"user_name": session["name"], "movie_id": oid},
+            {"$set": review_doc},
+            upsert=True
+        )
+        return jsonify({"success": True, "message": "Review saved successfully"}), 200
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)
+
