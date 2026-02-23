@@ -2,3 +2,5 @@ flask
 pymongo[srv]
 python-dotenv
 flask-login
+flask-bcrypt
+certifi

@@ -12,19 +12,15 @@
             <div class="info-display">
                 <label>Name</label>
                 <div class="info-value">
-                    <span id="firstNameDisplay">{{ user.first_name }} {{ user.last_name }}</span>
+                    <span id="nameDisplay">{{ user.name }}</span>
                 </div>
                 <button class="edit-btn" onclick="toggleEdit('name')">Edit</button>
             </div>
             <div class="info-edit" id="nameEdit" style="display: none;">
                 <form class="edit-form">
                     <div class="form-group">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" name="firstName" value="{{ user.first_name }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" name="lastName" value="{{ user.last_name }}" required>
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" value="{{ user.name }}" required>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="save-btn" onclick="saveName()">Save</button>
@@ -108,10 +104,9 @@
 </div>
 
 <script>
-// Mock data - will be replaced with actual data later
+// User data from backend
 let userData = {
-    first_name: "{{ user.first_name }}",
-    last_name: "{{ user.last_name }}",
+    name: "{{ user.name }}",
     email: "{{ user.email }}"
 };
 
@@ -128,11 +123,18 @@ function toggleEdit(type) {
     }
 }
 
-function showMessage(text) {
+function showMessage(text, isError = false) {
     const messageDisplay = document.getElementById('messageDisplay');
     const messageText = document.getElementById('messageText');
     messageText.textContent = text;
     messageDisplay.style.display = 'flex';
+    
+    // Add error styling if needed
+    if (isError) {
+        messageDisplay.style.backgroundColor = '#f44336';
+    } else {
+        messageDisplay.style.backgroundColor = '#4caf50';
+    }
     
     // Hide message after 3 seconds
     setTimeout(() => {
@@ -140,61 +142,127 @@ function showMessage(text) {
     }, 3000);
 }
 
-function saveName() {
-    const firstName = document.getElementById('firstName').value;
-    const lastName = document.getElementById('lastName').value;
+async function saveName() {
+    const name = document.getElementById('name').value.trim();
     
-    // Update display
-    document.getElementById('firstNameDisplay').textContent = firstName + ' ' + lastName;
-    userData.first_name = firstName;
-    userData.last_name = lastName;
+    if (!name) {
+        showMessage('Name cannot be empty!', true);
+        return;
+    }
     
-    // Hide edit form
-    toggleEdit('name');
-    
-    // TODO: Send to backend
-    showMessage('Name updated successfully!');
+    try {
+        const response = await fetch('/api/update-name', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: name })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update display
+            document.getElementById('nameDisplay').textContent = name;
+            userData.name = name;
+            
+            // Hide edit form
+            toggleEdit('name');
+            
+            showMessage(data.message || 'Name updated successfully!');
+        } else {
+            showMessage(data.message || 'Failed to update name', true);
+        }
+    } catch (error) {
+        showMessage('Error updating name. Please try again.', true);
+        console.error('Error:', error);
+    }
 }
 
-function saveEmail() {
-    const newEmail = document.getElementById('newEmail').value;
+async function saveEmail() {
+    const newEmail = document.getElementById('newEmail').value.trim();
     
-    // Update display
-    document.getElementById('emailDisplay').textContent = newEmail;
-    userData.email = newEmail;
+    if (!newEmail) {
+        showMessage('Email cannot be empty!', true);
+        return;
+    }
     
-    // Hide edit form
-    toggleEdit('email');
-    
-    // TODO: Send to backend
-    showMessage('Email updated successfully!');
+    try {
+        const response = await fetch('/api/update-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: newEmail })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update display
+            document.getElementById('emailDisplay').textContent = newEmail;
+            userData.email = newEmail;
+            
+            // Hide edit form
+            toggleEdit('email');
+            
+            showMessage(data.message || 'Email updated successfully!');
+        } else {
+            showMessage(data.message || 'Failed to update email', true);
+        }
+    } catch (error) {
+        showMessage('Error updating email. Please try again.', true);
+        console.error('Error:', error);
+    }
 }
 
-function savePassword() {
+async function savePassword() {
     const currentPassword = document.getElementById('currentPassword').value;
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     
     if (newPassword !== confirmPassword) {
-        showMessage('New passwords do not match!');
+        showMessage('New passwords do not match!', true);
         return;
     }
     
     if (newPassword.length < 6) {
-        showMessage('Password must be at least 6 characters long!');
+        showMessage('Password must be at least 6 characters long!', true);
         return;
     }
     
-    // Clear form
-    document.getElementById('currentPassword').value = '';
-    document.getElementById('newPassword').value = '';
-    document.getElementById('confirmPassword').value = '';
-    
-    // Hide edit form
-    toggleEdit('password');
-    
-    // TODO: Send to backend
-    showMessage('Password updated successfully! ');
+    try {
+        const response = await fetch('/api/update-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Clear form
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            // Hide edit form
+            toggleEdit('password');
+            
+            showMessage(data.message || 'Password updated successfully!');
+        } else {
+            showMessage(data.message || 'Failed to update password', true);
+        }
+    } catch (error) {
+        showMessage('Error updating password. Please try again.', true);
+        console.error('Error:', error);
+    }
 }
 
 function openNotificationSettings() {
@@ -202,11 +270,33 @@ function openNotificationSettings() {
 }
 
 function logout() {
-    // TODO: Implement logout
+    window.location.href = "{{ url_for('logout') }}";
 }
 
-function deleteAccount() {
-    // TODO: Implement account deletion
+async function deleteAccount() {
+    try {
+        const response = await fetch('/api/delete-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showMessage(data.message || 'Account deleted successfully, logging out...');
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+                window.location.href = "{{ url_for('login') }}";
+            }, 1500);
+        } else {
+            showMessage(data.message || 'Failed to delete account', true);
+        }
+    } catch (error) {
+        showMessage('Error deleting account. Please try again.', true);
+        console.error('Error:', error);
+    }
 }
 </script>
 {% endblock %}
