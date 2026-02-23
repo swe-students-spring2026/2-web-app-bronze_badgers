@@ -8,18 +8,13 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
 
-# client = MongoClient(os.getenv("MONGO_URI"))
-# db = client[os.getenv("MONGO_DBNAME")]
-db = None  # Set to None for frontend-only development
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client[os.getenv("MONGO_DBNAME")]
 
 
 @app.route("/")
 def home():
-    if db:
-        movies = list(db.movies.find())
-    else:
-        # Mock data for frontend development
-        movies = []
+    movies = list(db.movies.find())
     return render_template("home.html", movies=movies)
 
 
