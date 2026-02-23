@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="settings-container">
+    <h1>Settings</h1>
+    
+    <!-- Profile Information Section -->
+    <section class="settings-section">
+        <h2>Profile Information</h2>
+        
+        <!-- Name Display and Edit -->
+        <div class="info-item">
+            <div class="info-display">
+                <label>Name</label>
+                <div class="info-value">
+                    <span id="firstNameDisplay">{{ user.first_name }} {{ user.last_name }}</span>
+                </div>
+                <button class="edit-btn" onclick="toggleEdit('name')">Edit</button>
+            </div>
+            <div class="info-edit" id="nameEdit" style="display: none;">
+                <form class="edit-form">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" value="{{ user.first_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" value="{{ user.last_name }}" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="save-btn" onclick="saveName()">Save</button>
+                        <button type="button" class="cancel-btn" onclick="toggleEdit('name')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Email Display and Edit -->
+        <div class="info-item">
+            <div class="info-display">
+                <label>Email</label>
+                <div class="info-value">
+                    <span id="emailDisplay">{{ user.email }}</span>
+                </div>
+                <button class="edit-btn" onclick="toggleEdit('email')">Change</button>
+            </div>
+            <div class="info-edit" id="emailEdit" style="display: none;">
+                <form class="edit-form">
+                    <div class="form-group">
+                        <label for="newEmail">New Email</label>
+                        <input type="email" id="newEmail" name="newEmail" value="{{ user.email }}" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="save-btn" onclick="saveEmail()">Save</button>
+                        <button type="button" class="cancel-btn" onclick="toggleEdit('email')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Password Change -->
+        <div class="info-item">
+            <div class="info-display">
+                <label>Password</label>
+                <div class="info-value">
+                    <span>••••••••</span>
+                </div>
+                <button class="edit-btn" onclick="toggleEdit('password')">Change</button>
+            </div>
+            <div class="info-edit" id="passwordEdit" style="display: none;">
+                <form class="edit-form">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="save-btn" onclick="savePassword()">Save</button>
+                        <button type="button" class="cancel-btn" onclick="toggleEdit('password')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Account Actions Section -->
+    <section class="settings-section">
+        <h2>Account Actions</h2>
+        
+        <button class="action-btn notification-btn" onclick="openNotificationSettings()">
+            Notification Settings
+        </button>
+        
+        <button class="action-btn logout-btn" onclick="logout()">
+            Log Out
+        </button>
+        
+        <button class="action-btn delete-btn" onclick="deleteAccount()">
+            Delete Account
+        </button>
+    </section>
+</div>
+
+<script>
+// Mock data - will be replaced with actual data later
+let userData = {
+    first_name: "{{ user.first_name }}",
+    last_name: "{{ user.last_name }}",
+    email: "{{ user.email }}"
+};
+
+function toggleEdit(type) {
+    const editDiv = document.getElementById(type + 'Edit');
+    const displayDiv = editDiv.previousElementSibling;
+    
+    if (editDiv.style.display === 'none') {
+        editDiv.style.display = 'block';
+        displayDiv.style.display = 'none';
+    } else {
+        editDiv.style.display = 'none';
+        displayDiv.style.display = 'block';
+    }
+}
+
+function showMessage(text) {
+    const messageDisplay = document.getElementById('messageDisplay');
+    const messageText = document.getElementById('messageText');
+    messageText.textContent = text;
+    messageDisplay.style.display = 'flex';
+    
+    // Hide message after 3 seconds
+    setTimeout(() => {
+        messageDisplay.style.display = 'none';
+    }, 3000);
+}
+
+function saveName() {
+    const firstName = document.getElementById('firstName').value;
+    const lastName = document.getElementById('lastName').value;
+    
+    // Update display
+    document.getElementById('firstNameDisplay').textContent = firstName + ' ' + lastName;
+    userData.first_name = firstName;
+    userData.last_name = lastName;
+    
+    // Hide edit form
+    toggleEdit('name');
+    
+    // TODO: Send to backend
+    showMessage('Name updated successfully!');
+}
+
+function saveEmail() {
+    const newEmail = document.getElementById('newEmail').value;
+    
+    // Update display
+    document.getElementById('emailDisplay').textContent = newEmail;
+    userData.email = newEmail;
+    
+    // Hide edit form
+    toggleEdit('email');
+    
+    // TODO: Send to backend
+    showMessage('Email updated successfully!');
+}
+
+function savePassword() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showMessage('New passwords do not match!');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showMessage('Password must be at least 6 characters long!');
+        return;
+    }
+    
+    // Clear form
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    
+    // Hide edit form
+    toggleEdit('password');
+    
+    // TODO: Send to backend
+    showMessage('Password updated successfully! ');
+}
+
+function openNotificationSettings() {
+    // TODO: Implement notification settings
+}
+
+function logout() {
+    // TODO: Implement logout
+}
+
+function deleteAccount() {
+    // TODO: Implement account deletion
+}
+</script>
+{% endblock %}
+

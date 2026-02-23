@@ -85,5 +85,15 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/settings")
+def settings():
+    mock_user = {
+        "first_name": "John",
+        "last_name": "Doe",
+        "email": "john.doe@example.com"
+    }
+    return render_template("settings.html", user=mock_user)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
