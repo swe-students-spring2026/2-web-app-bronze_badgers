@@ -29,3 +29,224 @@ nav a {
     padding: 12px;
     margin-bottom: 12px;
 }
+
+/* Settings Page Styles */
+.settings-container {
+    padding: 16px 0;
+}
+
+.settings-container h1 {
+    margin-bottom: 24px;
+    font-size: 24px;
+    color: #57068c;
+}
+
+.settings-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #eee6f3;
+}
+
+.settings-section:last-of-type {
+    border-bottom: none;
+}
+
+.settings-section h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: #57068c;
+}
+
+.info-item {
+    margin-bottom: 20px;
+    padding: 16px;
+    background-color: #eee6f3;
+    border-radius: 8px;
+}
+
+.info-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-display label {
+    font-size: 12px;
+    color: #6d6d6d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.info-value {
+    font-size: 16px;
+    color: #404040;
+    margin-bottom: 8px;
+}
+
+.edit-btn {
+    align-self: flex-start;
+    padding: 8px 16px;
+    background-color: #57068c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.edit-btn:hover {
+    background-color: #8900e1;
+}
+
+.edit-btn:active {
+    background-color: #330662;
+}
+
+.info-edit {
+    padding-top: 12px;
+}
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 14px;
+    color: #404040;
+    font-weight: 500;
+}
+
+.form-group input {
+    padding: 10px;
+    border: 1px solid #b8b8b8;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #404040;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #57068c;
+    box-shadow: 0 0 0 2px rgba(87, 6, 140, 0.15);
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.save-btn {
+    padding: 10px 20px;
+    background-color: #57068c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.save-btn:hover {
+    background-color: #8900e1;
+}
+
+.save-btn:active {
+    background-color: #330662;
+}
+
+.cancel-btn {
+    padding: 10px 20px;
+    background-color: #6d6d6d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.cancel-btn:hover {
+    background-color: #404040;
+}
+
+.cancel-btn:active {
+    background-color: #000000;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notification-btn {
+    background-color: #7b5aa6;
+    color: white;
+}
+
+.notification-btn:hover {
+    background-color: #8900e1;
+}
+
+.notification-btn:active {
+    background-color: #57068c;
+}
+
+.logout-btn {
+    background-color: #7b5aa6;
+    color: white;
+}
+
+.logout-btn:hover {
+    background-color: #8900e1;
+}
+
+.logout-btn:active {
+    background-color: #57068c;
+}
+
+.delete-btn {
+    background-color: #7b5aa6;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #8900e1;
+}
+
+.delete-btn:active {
+    background-color: #57068c;
+}
+
+/* Message Display */
+.message-display {
+    width: 100%;
+    background-color: #57068c;
+    color: white;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 16px;
+}
+
