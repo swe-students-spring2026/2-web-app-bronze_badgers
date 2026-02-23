@@ -1,22 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Movie Rating System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-    <nav>
-        <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('settings') }}">Settings</a>
-    </nav>
-    <!-- Message Display -->
-    <div id="messageDisplay" class="message-display" style="display: none;">
-        <span id="messageText"></span>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"
+    />
+  </head>
+  <body class="has-tab-bar">
+    <div id="messageDisplay" class="message-display" style="display: none">
+      <span id="messageText"></span>
     </div>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-</body>
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <nav class="tab-bar">
+      <a
+        href="{{ url_for('home') }}"
+        class="tab-item {% if request.endpoint == 'home' or request.endpoint == 'search' %}active{% endif %}"
+      >
+        <i class="fa-solid fa-film"></i>
+        <span class="tab-label">Home</span>
+      </a>
+      <a
+        href="{{ url_for('my_reviews') }}"
+        class="tab-item {% if request.endpoint == 'my_reviews' %}active{% endif %}"
+      >
+        <i class="fa-solid fa-star"></i>
+        <span class="tab-label">My Reviews</span>
+      </a>
+      <a
+        href="{{ url_for('settings') }}"
+        class="tab-item {% if request.endpoint == 'settings' %}active{% endif %}"
+      >
+        <i class="fa-solid fa-gear"></i>
+        <span class="tab-label">Settings</span>
+      </a>
+    </nav>
+  </body>
 </html>

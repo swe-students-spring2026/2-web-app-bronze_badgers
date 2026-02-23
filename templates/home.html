@@ -1,8 +1,10 @@
-{% extends "base_bottomnav.html" %} {% block content %}
+{% extends "base.html" %} {% block content %}
 <!-- <h1>Movies</h1> -->
 <div class="search-bar">
   {% if session.get("name") %}
-  <div class="avatar">{{ session["name"][0] | upper }}</div>
+  <a href="{{ url_for('settings') }}"
+    ><div class="avatar">{{ session["name"][0] | upper }}</div></a
+  >
   {% else %}
   <a href="{{ url_for('login') }}" class="login-btn">Log In</a>
   {% endif %}
@@ -20,7 +22,11 @@
 </div>
 <!-- Filter Tabs -->
 <div class="filter-bar">
-  <i class="fa-solid fa-filter filter-icon"></i>
+  <i
+    class="fa-solid fa-filter filter-icon"
+    onclick="toggleFilterPanel()"
+    style="cursor: pointer"
+  ></i>
   <a
     href="{{ url_for('search', sort='recent') }}"
     class="filter-tab {% if sort == 'recent' %}active{% endif %}"
@@ -41,6 +47,103 @@
   >
 </div>
 
+<!-- Filter Panel -->
+<div class="filter-panel" id="filterPanel">
+  <div class="filter-panel-header">
+    <h3>Filters</h3>
+    <button class="filter-close" onclick="toggleFilterPanel()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <form id="filterForm" action="{{ url_for('search') }}" method="GET">
+    <input type="hidden" name="q" value="{{ query }}" />
+    <input type="hidden" name="sort" value="{{ sort }}" />
+
+    <!-- Genre -->
+    <div class="filter-section">
+      <h4>Genre</h4>
+      <div class="filter-chips">
+        {% set genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi',
+        'Romance', 'Thriller', 'Documentary', 'Animation', 'Adventure'] %} {%
+        for g in genres %}
+        <button
+          type="button"
+          class="filter-chip {% if g in selected_genres %}active{% endif %}"
+          data-filter="genre"
+          data-value="{{ g }}"
+        >
+          {{ g }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Decade -->
+    <div class="filter-section">
+      <h4>Decade</h4>
+      <div class="filter-chips">
+        {% set decades = ['2020s', '2010s', '2000s', '1990s', '1980s',
+        'Classic'] %} {% for d in decades %}
+        <button
+          type="button"
+          class="filter-chip {% if d in selected_decades %}active{% endif %}"
+          data-filter="decade"
+          data-value="{{ d }}"
+        >
+          {{ d }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Rating -->
+    <div class="filter-section">
+      <h4>Min Rating</h4>
+      <div class="filter-chips">
+        {% set ratings = ['4+', '3+', '2+', 'All'] %} {% for r in ratings %}
+        <button
+          type="button"
+          class="filter-chip {% if r == selected_rating %}active{% endif %}"
+          data-filter="rating"
+          data-value="{{ r }}"
+        >
+          <i class="fa-regular fa-star"></i> {{ r }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div class="filter-section">
+      <h4>Language</h4>
+      <div class="filter-chips">
+        {% set languages = ['English', 'Spanish', 'French', 'Chinese',
+        'Japanese', 'Korean', 'Hindi', 'German'] %} {% for l in languages %}
+        <button
+          type="button"
+          class="filter-chip {% if l in selected_languages %}active{% endif %}"
+          data-filter="language"
+          data-value="{{ l }}"
+        >
+          {{ l }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Hidden inputs for selected filters -->
+    <div id="hiddenFilterInputs"></div>
+
+    <div class="filter-actions">
+      <button type="button" class="filter-clear" onclick="clearFilters()">
+        Clear All
+      </button>
+      <button type="submit" class="filter-apply">Apply</button>
+    </div>
+  </form>
+</div>
+
 <!-- Movie Grid -->
 {% if movies %}
 <div class="movie-grid">
@@ -55,10 +158,13 @@
       <p class="movie-genre">
         {{ movie.genres | join(', ') if movie.genres else '' }}
       </p>
-      {% if movie.tomatoes and movie.tomatoes.viewer %}
+      {% if movie.avg_rating %}
       <p class="movie-rating">
-        <i class="fa-solid fa-star"></i> {{ movie.tomatoes.viewer.rating }}/5
+        <i class="fa-solid fa-star"></i> {{ movie.avg_rating }}/5 ({{
+        movie.review_count }})
       </p>
+      {% else %}
+      <p class="movie-rating no-rating">No ratings yet</p>
       {% endif %}
     </div>
   </a>
@@ -66,4 +172,47 @@
 </div>
 {% else %}
 <p class="no-results">No movies found.</p>
-{% endif %} {% endblock %}
+{% endif %}
+<script>
+  function toggleFilterPanel() {
+    const panel = document.getElementById("filterPanel");
+    panel.classList.toggle("open");
+  }
+
+  // Toggle chip active state
+  document.querySelectorAll(".filter-chip").forEach((chip) => {
+    chip.addEventListener("click", function () {
+      const filter = this.dataset.filter;
+
+      // Rating is single select
+      if (filter === "rating") {
+        document
+          .querySelectorAll('.filter-chip[data-filter="rating"]')
+          .forEach((c) => c.classList.remove("active"));
+      }
+
+      this.classList.toggle("active");
+    });
+  });
+
+  function clearFilters() {
+    document
+      .querySelectorAll(".filter-chip")
+      .forEach((c) => c.classList.remove("active"));
+  }
+
+  // collect active chips into hidden inputs before submit
+  document.getElementById("filterForm").addEventListener("submit", function () {
+    const container = document.getElementById("hiddenFilterInputs");
+    container.innerHTML = "";
+
+    document.querySelectorAll(".filter-chip.active").forEach((chip) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = chip.dataset.filter;
+      input.value = chip.dataset.value;
+      container.appendChild(input);
+    });
+  });
+</script>
+{% endblock %}
