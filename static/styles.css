@@ -23,6 +23,12 @@ nav a {
     color: #333;
 }
 
+.movie-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
 .movie-card {
     border: 1px solid #ddd;
     border-radius: 8px;

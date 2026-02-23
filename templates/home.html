@@ -3,10 +3,12 @@
 <h1>Movies</h1>
 {% if movies %}
     {% for movie in movies %}
+    <a href="{{ url_for('movie_detail', movie_id=movie._id) }}" class="movie-card-link">
     <div class="movie-card">
         <h2>{{ movie.title }}</h2>
         <p>Genre: {{ movie.genre }}</p>
     </div>
+    </a>
     {% endfor %}
 {% else %}
     <p>No movies yet.</p>

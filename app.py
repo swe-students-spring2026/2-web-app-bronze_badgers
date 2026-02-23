@@ -227,6 +227,25 @@ def delete_account():
 
 
 
+# Movie detail page (rate and comment)
+@app.route("/movie/<movie_id>")
+def movie_detail(movie_id):
+    if "name" not in session:
+        flash("Please log in to view this page", "warning")
+        return redirect(url_for("login"))
+    try:
+        oid = ObjectId(movie_id)
+    except InvalidId:
+        flash("Movie not found", "danger")
+        return redirect(url_for("home"))
+    movie = db.movies.find_one({"_id": oid})
+    if not movie:
+        flash("Movie not found", "danger")
+        return redirect(url_for("home"))
+    user_review = reviews_collection.find_one({"user_name": session["name"], "movie_id": oid})
+    return render_template("movie_detail.html", movie=movie, user_review=user_review)
+
+
 #Save Review + Comment
 @app.route("/api/movie/<movie_id>/review", methods=["POST"])
 def save_review(movie_id):
