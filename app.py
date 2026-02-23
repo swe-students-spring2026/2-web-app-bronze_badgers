@@ -17,10 +17,6 @@ client = MongoClient(os.getenv("MONGO_URI"), tlsCAFile=certifi.where())
 db = client[os.getenv("MONGO_DBNAME")]
 users_collection = db.users  # we'll store login users here
 
-# @app.route("/")
-# def home():
-#     movies = list(db.movies.find())
-#     return render_template("home.html", movies=movies)
 
 # Home page
 @app.route("/")
@@ -29,7 +25,9 @@ def home():
         movies = list(db.movies.find())
         return render_template("home.html", movies=movies)
 
+
         # return f"Hello, {session['name']}! <a href='/logout'>Logout</a>"
+
     return redirect(url_for("login"))
 
 
