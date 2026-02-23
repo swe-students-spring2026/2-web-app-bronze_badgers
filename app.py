@@ -1,6 +1,6 @@
 # app.py
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
@@ -84,12 +84,125 @@ def logout():
 
 @app.route("/settings")
 def settings():
-    mock_user = {
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john.doe@example.com"
+    if "name" not in session:
+        flash("Please log in to access settings", "warning")
+        return redirect(url_for("login"))
+    
+    # Fetch user from database
+    user = users_collection.find_one({"name": session["name"]})
+    if not user:
+        flash("User not found", "danger")
+        session.pop("name", None)
+        return redirect(url_for("login"))
+    
+    # Prepare user data for template (using single name field)
+    user_data = {
+        "name": user.get("name", ""),
+        "email": user.get("email", "")
     }
-    return render_template("settings.html", user=mock_user)
+    return render_template("settings.html", user=user_data)
+
+
+# API endpoint to update user name
+@app.route("/api/update-name", methods=["POST"])
+def update_name():
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    data = request.get_json()
+    new_name = data.get("name", "").strip()
+    
+    if not new_name:
+        return jsonify({"success": False, "message": "Name cannot be empty"}), 400
+    
+    # Check if new name already exists (and it's not the current user)
+    existing_user = users_collection.find_one({"name": new_name})
+    if existing_user and existing_user.get("name") != session["name"]:
+        return jsonify({"success": False, "message": "Name already taken"}), 400
+    
+    # Update the user's name in database
+    result = users_collection.update_one(
+        {"name": session["name"]},
+        {"$set": {"name": new_name}}
+    )
+    
+    if result.modified_count > 0:
+        # Update session with new name
+        session["name"] = new_name
+        return jsonify({"success": True, "message": "Name updated successfully"}), 200
+    else:
+        return jsonify({"success": False, "message": "Failed to update name"}), 500
+
+
+# API endpoint to update user email
+@app.route("/api/update-email", methods=["POST"])
+def update_email():
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    data = request.get_json()
+    new_email = data.get("email", "").strip()
+    
+    if not new_email:
+        return jsonify({"success": False, "message": "Email cannot be empty"}), 400
+    
+    # Check if new email already exists (and it's not the current user)
+    existing_user = users_collection.find_one({"email": new_email})
+    if existing_user and existing_user.get("name") != session["name"]:
+        return jsonify({"success": False, "message": "Email already registered"}), 400
+    
+    # Update the user's email in database
+    result = users_collection.update_one(
+        {"name": session["name"]},
+        {"$set": {"email": new_email}}
+    )
+    
+    if result.modified_count > 0:
+        return jsonify({"success": True, "message": "Email updated successfully"}), 200
+    else:
+        return jsonify({"success": False, "message": "Failed to update email"}), 500
+
+
+# API endpoint to update user password
+@app.route("/api/update-password", methods=["POST"])
+def update_password():
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    data = request.get_json()
+    current_password = data.get("currentPassword", "")
+    new_password = data.get("newPassword", "")
+    confirm_password = data.get("confirmPassword", "")
+    
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({"success": False, "message": "All password fields are required"}), 400
+    
+    if new_password != confirm_password:
+        return jsonify({"success": False, "message": "New passwords do not match"}), 400
+    
+    if len(new_password) < 6:
+        return jsonify({"success": False, "message": "Password must be at least 6 characters long"}), 400
+    
+    # Fetch current user
+    user = users_collection.find_one({"name": session["name"]})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"}), 404
+    
+    # Verify current password
+    if not bcrypt.check_password_hash(user["password"], current_password):
+        return jsonify({"success": False, "message": "Current password is incorrect"}), 400
+    
+    # Hash new password and update
+    hashed_pw = bcrypt.generate_password_hash(new_password).decode("utf-8")
+    result = users_collection.update_one(
+        {"name": session["name"]},
+        {"$set": {"password": hashed_pw}}
+    )
+    
+    if result.modified_count > 0:
+        return jsonify({"success": True, "message": "Password updated successfully"}), 200
+    else:
+        return jsonify({"success": False, "message": "Failed to update password"}), 500
 
 
 if __name__ == "__main__":
