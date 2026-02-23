@@ -273,8 +273,30 @@ function logout() {
     window.location.href = "{{ url_for('logout') }}";
 }
 
-function deleteAccount() {
-    // TODO: Implement account deletion
+async function deleteAccount() {
+    try {
+        const response = await fetch('/api/delete-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showMessage(data.message || 'Account deleted successfully, logging out...');
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+                window.location.href = "{{ url_for('login') }}";
+            }, 1500);
+        } else {
+            showMessage(data.message || 'Failed to delete account', true);
+        }
+    } catch (error) {
+        showMessage('Error deleting account. Please try again.', true);
+        console.error('Error:', error);
+    }
 }
 </script>
 {% endblock %}

@@ -205,5 +205,22 @@ def update_password():
         return jsonify({"success": False, "message": "Failed to update password"}), 500
 
 
+# API endpoint to delete user account
+@app.route("/api/delete-account", methods=["POST"])
+def delete_account():
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    # Delete the user from database
+    result = users_collection.delete_one({"name": session["name"]})
+    
+    if result.deleted_count > 0:
+        # Clear the session
+        session.pop("name", None)
+        return jsonify({"success": True, "message": "Account deleted successfully"}), 200
+    else:
+        return jsonify({"success": False, "message": "Failed to delete account"}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)
