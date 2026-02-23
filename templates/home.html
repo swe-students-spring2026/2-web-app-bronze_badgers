@@ -7,13 +7,14 @@
   <a href="{{ url_for('login') }}" class="login-btn">Log In</a>
   {% endif %}
   <div class="form-group">
-    <form action="/" method="GET">
+    <form action="{{ url_for('search')}}" method="GET" class="search-form">
       <input
         type="text"
         name="q"
         class="main-search"
         placeholder="Search movies..."
       />
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
     </form>
   </div>
 </div>
@@ -23,16 +24,19 @@
   <a
     href="{{ url_for('search', sort='recent') }}"
     class="filter-tab {% if sort == 'recent' %}active{% endif %}"
+    data-text="Recent"
     >Recent</a
   >
   <a
     href="{{ url_for('search', sort='popular') }}"
     class="filter-tab {% if sort == 'popular' %}active{% endif %}"
+    data-text="Popular"
     >Popular</a
   >
   <a
     href="{{ url_for('search', sort='rating') }}"
     class="filter-tab {% if sort == 'rating' %}active{% endif %}"
+    data-text="Rating"
     >Rating</a
   >
 </div>
@@ -47,7 +51,7 @@
   >
     <div class="movie-card">
       <h3 class="movie-title">{{ movie.title }}</h3>
-      <p class="movie-year">{{ movie.year }}</p>
+      <p class="movie-year">{{ (movie.year | string)[:4] }}</p>
       <p class="movie-genre">
         {{ movie.genres | join(', ') if movie.genres else '' }}
       </p>

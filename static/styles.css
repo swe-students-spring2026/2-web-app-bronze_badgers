@@ -262,6 +262,8 @@ nav a {
 input.main-search {
   width: 100%;
   box-sizing: border-box;
+  font-size: 15px;
+  border-radius: 8px;
 }
 
 .search-bar {
@@ -276,6 +278,20 @@ input.main-search {
 
 .search-bar > .form-group {
   flex: 1;
+}
+
+.search-form {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 14px;
+  pointer-events: none;
 }
 
 .avatar {
@@ -306,7 +322,7 @@ input.main-search {
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #eee;
@@ -328,6 +344,16 @@ input.main-search {
   color: #57068c;
   font-weight: 600;
   border-bottom: 2px solid #57068c;
+  margin-bottom: -2px;
+}
+
+.filter-tab::after {
+  content: attr(data-text);
+  font-weight: 600;
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 
 /* Movie Grid */
@@ -355,30 +381,30 @@ input.main-search {
 }
 
 .movie-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
   line-height: 1.3;
 }
 
 .movie-year {
-  font-size: 12px;
+  font-size: 14px;
   color: #999;
 }
 
 .movie-genre {
-  font-size: 12px;
+  font-size: 14px;
   color: #666;
 }
 
 .movie-rating {
-  font-size: 13px;
+  font-size: 15px;
   color: #57068c;
   margin-top: auto;
 }
 
 .movie-rating i {
-  color: #f5c518;
+  color: #57068c;
 }
 
 .no-results {
@@ -400,7 +426,7 @@ input.main-search {
   max-width: 480px;
   display: flex;
   justify-content: space-around;
-  background: #fff;
+  background: #fbf4ff;
   border-top: 1px solid #ddd;
   border-bottom: none;
   padding: 10px 0 15px;
@@ -414,7 +440,7 @@ input.main-search {
   align-items: center;
   gap: 6px;
   text-decoration: none;
-  color: #999;
+  color: #57068c;
   font-size: 14px;
   flex: 1;
   justify-content: center;
