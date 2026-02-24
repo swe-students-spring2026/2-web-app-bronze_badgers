@@ -26,14 +26,7 @@ reviews_collection = db.reviews  # we'll store movie reviews here
 @app.route("/")
 def home():
     # session.clear()
-    if "name" in session:
-        movies = list(db.movies.find())
-        return render_template("home.html", movies=movies)
 
-
-        # return f"Hello, {session['name']}! <a href='/logout'>Logout</a>"
-
-    return redirect(url_for("login"))
     if "name" not in session:
         return redirect(url_for("login"))
     movies = list(db.movies.find().sort("year", -1).limit(20))
