@@ -21,6 +21,7 @@ users_collection = db.users  # we'll store login users here
 # Home page
 @app.route("/")
 def home():
+    # session.clear()
     if "name" in session:
         movies = list(db.movies.find())
         return render_template("home.html", movies=movies)
