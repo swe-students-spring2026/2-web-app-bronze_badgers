@@ -1,25 +1,45 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
-</head>
-<body>
-    <h2>Register</h2>
+{% extends "base_login.html" %}
+
+{% block content %}
+
+<div class="settings-container">
+    <h1>Register</h1>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <ul>
-          {% for category, message in messages %}
-            <li style="color: red">{{ message }}</li>
-          {% endfor %}
-        </ul>
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">
+              {{ message }}
+          </div>
+        {% endfor %}
       {% endif %}
     {% endwith %}
-    <form method="POST">
-        Name: <input type="text" name="name" required><br><br>
-        Email: <input type="email" name="email" required><br><br>
-        Password: <input type="password" name="password" required><br><br>
-        <input type="submit" value="Register">
+
+    <form method="POST" class="edit-form">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="save-btn">Register</button>
+        </div>
     </form>
-    <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
-</body>
-</html>
+
+    <div style="margin-top: 16px;">
+        Already have an account?
+        <a href="{{ url_for('login') }}">Login</a>
+    </div>
+</div>
+
+{% endblock %}

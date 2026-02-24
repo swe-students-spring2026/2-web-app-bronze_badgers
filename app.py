@@ -46,7 +46,7 @@ def login():
             session["name"] = name  # store in session
             return redirect(url_for("home"))
         else:
-            flash("Invalid name or password", "danger")
+            flash("Invalid name or password", "warning")
             return redirect(url_for("login"))
 
     return render_template("login.html")
@@ -76,7 +76,7 @@ def register():
 
         flash("Registration successful! Please log in.", "success")
         return redirect(url_for("login"))
-
+    
     return render_template("register.html")
 
 
