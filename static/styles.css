@@ -629,3 +629,19 @@ input.main-search {
 .tab-label {
   font-size: 13px;
 }
+/* login and register page */
+.main-nav {
+  background-color: #57068c;
+  padding: 15px 20px;
+  margin-bottom: 16px;
+}
+
+.main-nav span {
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.flash.warning {
+    color: red;
+}

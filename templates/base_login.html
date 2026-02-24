@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Movie Rating System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="main-nav">
+        <span class="nav-title">Movie Rating System</span>
+    </nav>
+
+    <!-- Message Display -->
+    <div id="messageDisplay" class="message-display" style="display: none;">
+        <span id="messageText"></span>
+    </div>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

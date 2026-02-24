@@ -25,6 +25,8 @@ reviews_collection = db.reviews  # we'll store movie reviews here
 # Home page
 @app.route("/")
 def home():
+    # session.clear()
+
     if "name" not in session:
         return redirect(url_for("login"))
     movies = list(db.movies.find().sort("year", -1).limit(20))
@@ -46,7 +48,7 @@ def login():
             session["name"] = name  # store in session
             return redirect(url_for("home"))
         else:
-            flash("Invalid name or password", "danger")
+            flash("Invalid name or password", "warning")
             return redirect(url_for("login"))
 
     return render_template("login.html")
@@ -76,7 +78,7 @@ def register():
 
         flash("Registration successful! Please log in.", "success")
         return redirect(url_for("login"))
-
+    
     return render_template("register.html")
 
 
