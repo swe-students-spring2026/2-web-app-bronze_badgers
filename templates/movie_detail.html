@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="movie-detail" data-movie-id="{{ movie._id }}">
+    <h1>{{ movie.title }}</h1>
+    <p>Genre: {{ movie.genre }}</p>
+
+    <section class="review-form-section">
+        <h2>Your review</h2>
+        <div class="rating-row">
+            <label>Rating:</label>
+            <div class="star-radios">
+                {% for i in [1, 2, 3, 4, 5] %}
+                <label class="star-label">
+                    <input type="radio" name="stars" value="{{ i }}" {% if user_review and user_review.stars == i %}checked{% endif %}>
+                    {{ i }} star{{ 's' if i != 1 else '' }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="comment-row">
+            <label for="comment">Comment:</label>
+            <textarea id="comment" name="comment" rows="4" placeholder="Write a comment (optional)...">{% if user_review and user_review.comment %}{{ user_review.comment }}{% endif %}</textarea>
+        </div>
+        <button type="button" class="save-review-btn" onclick="saveReview()">Save review</button>
+    </section>
+</div>
+
+<script>
+function showMessage(text, isError) {
+    const messageDisplay = document.getElementById('messageDisplay');
+    const messageText = document.getElementById('messageText');
+    if (!messageDisplay || !messageText) return;
+    messageText.textContent = text;
+    messageDisplay.style.display = 'flex';
+    messageDisplay.style.backgroundColor = isError ? '#f44336' : '#4caf50';
+    setTimeout(function() { messageDisplay.style.display = 'none'; }, 3000);
+}
+
+async function saveReview() {
+    const movieId = document.querySelector('.movie-detail').dataset.movieId;
+    const starsInput = document.querySelector('input[name="stars"]:checked');
+    const comment = document.getElementById('comment').value.trim();
+
+    if (!starsInput) {
+        showMessage('Please select a star rating (1-5).', true);
+        return;
+    }
+
+    const stars = parseInt(starsInput.value, 10);
+
+    try {
+        const response = await fetch('/api/movie/' + movieId + '/review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stars: stars, comment: comment })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showMessage(data.message || 'Review saved.');
+        } else {
+            showMessage(data.message || 'Failed to save review.', true);
+        }
+    } catch (err) {
+        showMessage('Error saving review. Please try again.', true);
+        console.error(err);
+    }
+}
+</script>
+{% endblock %}
