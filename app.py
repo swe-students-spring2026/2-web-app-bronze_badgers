@@ -28,7 +28,9 @@ def home():
     if "name" not in session:
         return redirect(url_for("login"))
     movies = list(db.movies.find().sort("year", -1).limit(20))
-    return render_template("home.html", movies=movies, query="", sort="recent")
+    return render_template("home.html", movies=movies, query="", sort="recent",
+                         selected_genres=[], selected_decades=[],
+                         selected_rating="", selected_languages=[])
 
 
 # Login page
@@ -268,6 +270,21 @@ def save_review(movie_id):
             {"$set": review_doc},
             upsert=True
         )
+
+        # update average score for movie so does not have to calculate on load
+        pipeline = [
+            {"$match": {"movie_id": oid}},
+            {"$group": {"_id": None, "avg": {"$avg": "$stars"}, "count": {"$sum": 1}}}
+        ]
+        result = list(reviews_collection.aggregate(pipeline))
+        if result:
+            db.movies.update_one(
+                {"_id": oid},
+                {"$set": {
+                    "avg_rating": round(result[0]["avg"], 1),
+                    "review_count": result[0]["count"]
+                }}
+            )
         return jsonify({"success": True, "message": "Review saved successfully"}), 200
 
 #Display reviews/comments for a movie
@@ -301,7 +318,6 @@ def my_reviews():
 
 
 # Search
-
 @app.route("/search")
 def search():
     if "name" not in session:
@@ -309,18 +325,37 @@ def search():
     
     query = request.args.get("q", "")
     sort = request.args.get("sort", "recent")
+    genres = request.args.getlist("genre")
+    decades = request.args.getlist("decade")
+    rating = request.args.get("rating", "")
+    languages = request.args.getlist("language")
     
-    # Build filter
     filter_query = {}
     if query:
         filter_query["title"] = {"$regex": query, "$options": "i"}
+    if genres:
+        filter_query["genres"] = {"$in": genres}
+    if languages:
+        filter_query["languages"] = {"$in": languages}
+    if decades:
+        year_conditions = []
+        for d in decades:
+            if d == "Classic":
+                year_conditions.append({"year": {"$lt": 1980}})
+            else:
+                start = int(d[:4])
+                year_conditions.append({"year": {"$gte": start, "$lt": start + 10}})
+        if year_conditions:
+            filter_query["$or"] = year_conditions
+    if rating and rating != "All":
+        min_rating = int(rating[0])
+        filter_query["avg_rating"] = {"$gte": min_rating}
     
-    # Build sort
     if sort == "rating":
-        sort_key = [("tomatoes.viewer.rating", -1)]
+        sort_key = [("avg_rating", -1)]
     elif sort == "popular":
-        sort_key = [("tomatoes.viewer.numReviews", -1)]
-    else:  # recent
+        sort_key = [("review_count", -1)]
+    else:
         sort_key = [("year", -1)]
     
     movies = list(db.movies.find(filter_query).sort(sort_key).limit(20))
