@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="settings-container">
+  <h1>Privacy Settings</h1>
+
+  <!-- Review Privacy Section -->
+  <section class="settings-section">
+    <div id="privacyMessage" style="
+     display: none;
+     padding: 10px;
+     margin-top: 10px;
+     border-radius: 5px;
+     color: white;
+     font-weight: bold;
+"></div>
+    <h2>Review Posting Preferences</h2>
+
+    <!-- Anonymous Review -->
+    <div class="info-item">
+      <div class="info-display">
+        <label>Anonymous Reviews</label>
+        <div class="info-value">
+          <span id="anonDisplay">
+            {% if user.is_anonymous %}Yes{% else %}No{% endif %}
+          </span>
+        </div>
+        <button class="edit-btn" onclick="toggleEdit('anon')">Edit</button>
+      </div>
+
+      <div class="info-edit" id="anonEdit" style="display: none">
+        <form class="edit-form">
+          <div class="form-group">
+            <label>Do you want to post reviews anonymously?</label>
+            <label>
+              <input type="radio" name="anonymous" value="true"
+                {% if user.is_anonymous %}checked{% endif %}>
+              Yes
+            </label>
+            <label>
+              <input type="radio" name="anonymous" value="false"
+                {% if not user.is_anonymous %}checked{% endif %}>
+              No
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="save-btn" onclick="savePrivacySettings()">
+              Save
+            </button>
+            <button type="button" class="cancel-btn" onclick="toggleEdit('anon')">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Private Comment -->
+    <div class="info-item">
+      <div class="info-display">
+        <label>Private Comments</label>
+        <div class="info-value">
+          <span id="privateDisplay">
+            {% if user.private_comment %}Yes{% else %}No{% endif %}
+          </span>
+        </div>
+        <button class="edit-btn" onclick="toggleEdit('private')">Edit</button>
+      </div>
+
+      <div class="info-edit" id="privateEdit" style="display: none">
+        <form class="edit-form">
+          <div class="form-group">
+            
+            <label>Should your comments be visible only to yourself?</label>
+            <input type="checkbox" name="private_comment"
+              {% if user.private_comment %}checked{% endif %}>
+   
+          </div>
+          <div class="form-actions">
+            <button type="button" class="save-btn" onclick="savePrivacySettings()">
+              Save
+            </button>
+            <button type="button" class="cancel-btn" onclick="toggleEdit('private')">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<script>
+function toggleEdit(type) {
+  const editDiv = document.getElementById(type + "Edit");
+  const displayDiv = editDiv.previousElementSibling;
+
+  if (editDiv.style.display === "none") {
+    editDiv.style.display = "block";
+    displayDiv.style.display = "none";
+  } else {
+    editDiv.style.display = "none";
+    displayDiv.style.display = "block";
+  }
+}
+function showPrivacyMessage(text, isError = false) {
+  const messageDiv = document.getElementById("privacyMessage");
+  messageDiv.textContent = text;
+  messageDiv.style.display = "block";
+  
+  // Set background color
+  messageDiv.style.backgroundColor = isError ? "#f44336" : "#4caf50";
+
+  // Hide after 3 seconds
+  setTimeout(() => {
+    messageDiv.style.display = "none";
+  }, 3000);
+}
+function savePrivacySettings() {
+  const selected = document.querySelector('input[name="anonymous"]:checked').value;
+  const privateComment = document.querySelector('input[name="private_comment"]').checked;
+
+  const payload = {
+    is_anonymous: selected === "true",
+    private_comment: privateComment
+  };
+
+  fetch("/api/update-privacy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(response => response.json())
+  .then(data => {
+    // Update display spans
+    document.getElementById("anonDisplay").textContent = payload.is_anonymous ? "Yes" : "No";
+    document.getElementById("privateDisplay").textContent = payload.private_comment ? "Yes" : "No";
+
+    // Hide edit forms
+    toggleEdit("anon");
+    toggleEdit("private");
+
+    // Show message on screen
+    showPrivacyMessage(data.message || "Privacy settings updated!");
+  })
+  .catch(error => {
+    console.error("Error:", error);
+    showPrivacyMessage("Failed to update privacy settings. Try again.", true);
+  });
+}
+</script>
+
+{% endblock %}
