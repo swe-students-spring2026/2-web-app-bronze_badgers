@@ -228,8 +228,41 @@ def delete_account():
         return jsonify({"success": True, "message": "Account deleted successfully"}), 200
     else:
         return jsonify({"success": False, "message": "Failed to delete account"}), 500
+    
+# privacy settings    
+@app.route("/privacy-settings")
+def privacy_settings():
+    if "name" not in session:
+        return redirect(url_for("login"))
 
+    user_data = users_collection.find_one({"name": session["name"]})
+    is_anonymous = user_data.get("is_anonymous", False)
+    private_comment = user_data.get("private_comment", False)
 
+    return render_template(
+        "privacy_settings.html",
+        user={
+            "name": session["name"],
+            "is_anonymous": is_anonymous,
+            "private_comment": private_comment
+        }
+    )
+
+@app.route("/api/update-privacy", methods=["POST"])
+def update_privacy():
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not logged in"})
+
+    data = request.get_json()
+    is_anonymous = data.get("is_anonymous", False)
+    private_comment = data.get("private_comment", False)
+
+    users_collection.update_one(
+        {"name": session["name"]},
+        {"$set": {"is_anonymous": is_anonymous, "private_comment": private_comment}}
+    )
+
+    return jsonify({"success": True, "message": "Privacy settings updated!"})
 
 # Movie detail page (rate and comment)
 @app.route("/movie/<movie_id>")

@@ -147,6 +147,12 @@
     >
       Notification Settings
     </button>
+    <button
+    class="action-btn privacy-btn"
+    onclick="openPrivacySettings()"
+  >
+    Privacy Settings
+    </button>
 
     <button class="action-btn logout-btn" onclick="logout()">Log Out</button>
 
@@ -321,6 +327,10 @@
   function openNotificationSettings() {
     // TODO: Implement notification settings
   }
+
+  function openPrivacySettings() {
+  window.location.href = "{{ url_for('privacy_settings') }}";
+}
 
   function logout() {
     window.location.href = "{{ url_for('logout') }}";

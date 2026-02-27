@@ -288,6 +288,19 @@ nav a {
   background-color: #57068c;
 }
 
+.privacy-btn {
+  background-color: #7b5aa6;
+  color: white;
+}
+
+.privacy-btn:hover {
+  background-color: #8900e1;
+}
+
+.privacy-btn:active {
+  background-color: #57068c;
+}
+
 .logout-btn {
   background-color: #7b5aa6;
   color: white;
