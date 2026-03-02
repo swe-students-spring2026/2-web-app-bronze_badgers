@@ -70,11 +70,19 @@
       <div class="info-edit" id="privateEdit" style="display: none">
         <form class="edit-form">
           <div class="form-group">
-            
             <label>Should your comments be visible only to yourself?</label>
-            <input type="checkbox" name="private_comment"
-              {% if user.private_comment %}checked{% endif %}>
-   
+
+            <label>
+              <input type="radio" name="private_comment" value="true"
+                {% if user.private_comment %}checked{% endif %}>
+              Yes
+            </label>
+
+            <label>
+              <input type="radio" name="private_comment" value="false"
+                {% if not user.private_comment %}checked{% endif %}>
+              No
+            </label>
           </div>
           <div class="form-actions">
             <button type="button" class="save-btn" onclick="savePrivacySettings()">
@@ -104,6 +112,13 @@ function toggleEdit(type) {
     displayDiv.style.display = "block";
   }
 }
+function closeEdit(type) {
+  const editDiv = document.getElementById(type + "Edit");
+  const displayDiv = editDiv.previousElementSibling;
+
+  editDiv.style.display = "none";
+  displayDiv.style.display = "block";
+}
 function showPrivacyMessage(text, isError = false) {
   const messageDiv = document.getElementById("privacyMessage");
   messageDiv.textContent = text;
@@ -119,11 +134,10 @@ function showPrivacyMessage(text, isError = false) {
 }
 function savePrivacySettings() {
   const selected = document.querySelector('input[name="anonymous"]:checked').value;
-  const privateComment = document.querySelector('input[name="private_comment"]').checked;
-
+  const privateSelected = document.querySelector('input[name="private_comment"]:checked').value;
   const payload = {
     is_anonymous: selected === "true",
-    private_comment: privateComment
+    private_comment: privateSelected === "true"
   };
 
   fetch("/api/update-privacy", {
@@ -138,8 +152,10 @@ function savePrivacySettings() {
     document.getElementById("privateDisplay").textContent = payload.private_comment ? "Yes" : "No";
 
     // Hide edit forms
-    toggleEdit("anon");
-    toggleEdit("private");
+    // toggleEdit("anon");
+    // toggleEdit("private");
+    closeEdit("anon");
+    closeEdit("private");
 
     // Show message on screen
     showPrivacyMessage(data.message || "Privacy settings updated!");
