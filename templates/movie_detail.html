@@ -1,32 +1,292 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="movie-detail" data-movie-id="{{ movie._id }}">
-    <h1>{{ movie.title }}</h1>
-    <p>Genre: {{ movie.genre }}</p>
+  <h1>{{ movie.title }}</h1>
+  {% if movie.genres %}
+  <p class="detail-label">Genre(s)</p>
+  <div class="detail-genres">
+    {% for g in movie.genres %}
+      <span class="filter-chip">{{ g }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if movie.fullplot %}
+  <p class="movie-plot">{{ movie.fullplot }}</p>
+  {% elif movie.plot %}
+  <p class="movie-plot">{{ movie.plot }}</p>
+  {% endif %}
 
-    <section class="review-form-section">
-        <h2>Your review</h2>
-        <div class="rating-row">
-            <label>Rating:</label>
-            <div class="star-radios">
-                {% for i in [1, 2, 3, 4, 5] %}
-                <label class="star-label">
-                    <input type="radio" name="stars" value="{{ i }}" {% if user_review and user_review.stars == i %}checked{% endif %}>
-                    {{ i }} star{{ 's' if i != 1 else '' }}
-                </label>
+  <!--- own review -->
+  <section class="review-form-section">
+    <h2>Your review</h2>
+
+    <div class="info-item">
+
+      <!--- view mode if user review exists already-->
+      <div class="review-card" id="reviewDisplay" {% if not user_review %}style="display: none"{% endif %}>
+        <div class="avatar">{{ session["name"][0] | upper }}</div>
+        <div class="review-content">
+          <div class="review-header">
+            <span class="review-username">{{ session["name"] }}</span>
+            <!-- read-only stars -->
+            <div class="star-display">
+              {% if user_review %}
+                {% for i in range(1, 6) %}
+                  <i class="fa fa-star {% if user_review.stars >= i %}active{% endif %}"></i>
                 {% endfor %}
+              {% endif %}
             </div>
+          </div>
+          <span class="review-time" id="reviewTime">{% if user_review and user_review.updated_at %}{{ user_review.updated_at.strftime('%b %d, %Y %H:%M') }}{% endif %}</span>
+          <p id="reviewText">{{ user_review.comment if user_review and user_review.comment else '' }}</p>
+          <!--- edit / reply / delete -->
+          <div class="review-actions">
+            <button type="button" class="reply-btn" onclick="toggleEdit('review')">Edit</button>
+            <button type="button" class="reply-btn" onclick="toggleReplyForm('{{ user_review._id if user_review else '' }}')">Reply</button>
+            <button type="button" class="delete-text-btn" onclick="deleteReview('{{ user_review._id if user_review else '' }}')">Delete</button>
+          </div>
+
+          <div class="reply-form" id="replyForm-{{ user_review._id if user_review else '' }}" style="display: none">
+            <textarea id="replyText-{{ user_review._id if user_review else '' }}" rows="2" placeholder="Write a reply..."></textarea>
+            <div class="form-actions">
+              <button type="button" class="save-btn" onclick="postComment('{{ user_review._id if user_review else '' }}')">Post</button>
+              <button type="button" class="cancel-btn" onclick="toggleReplyForm('{{ user_review._id if user_review else '' }}')">Cancel</button>
+            </div>
+          </div>
+
+          {% if user_review and user_review.comments %}
+            {% for comment in user_review.comments %}
+              {% if loop.index == 3 %}
+              <button type="button" class="show-replies-btn" onclick="toggleAllReplies('user')">
+                Show all replies ({{ (user_review.comments | length) - 2 }})
+              </button>
+              <div class="hidden-replies" id="hiddenReplies-user" style="display: none">
+              {% endif %}
+              <div class="comment-card" id="commentCard-{{ comment._id }}">
+                <div class="avatar avatar-sm">{{ comment.display_name[0] | upper }}</div>
+                <div class="review-content">
+                  <div class="review-header">
+                    <span class="review-username">{{ comment.display_name }}</span>
+                    <!--- Showing anonymous if anonymous user-->
+                    {% if comment.commenter_stars and comment.display_name != 'Anonymous' %}
+                    <div class="star-display star-sm">
+                      {% for i in range(1, 6) %}
+                        <i class="fa fa-star {% if comment.commenter_stars >= i %}active{% endif %}"></i>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <p class="review-text" id="commentText-{{ comment._id }}"><span class="reply-to-label">@{{ session["name"] }} </span>{{ comment.comment }}</p>
+                  <div class="comment-edit-form" id="commentEditForm-{{ comment._id }}" style="display: none">
+                    <textarea id="commentEditText-{{ comment._id }}" rows="2">{{ comment.comment }}</textarea>
+                    <div class="form-actions">
+                      <button type="button" class="save-btn" onclick="saveCommentEdit('{{ comment._id }}')">Save</button>
+                      <button type="button" class="cancel-btn" onclick="cancelCommentEdit('{{ comment._id }}')">Cancel</button>
+                    </div>
+                  </div>
+                  <span class="review-time">{% if comment.updated_at %}{{ comment.updated_at.strftime('%b %d, %Y %H:%M') }}{% endif %}</span>
+                  {% if comment.user_name == session["name"] %}
+                  <div class="comment-actions">
+                    <button type="button" class="reply-btn" onclick="startCommentEdit('{{ comment._id }}')">Edit</button>
+                    <button type="button" class="delete-text-btn" onclick="deleteComment('{{ comment._id }}')">Delete</button>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+            {% if user_review.comments | length > 2 %}
+              </div>
+            {% endif %}
+          {% endif %}
+
         </div>
-        <div class="comment-row">
-            <label for="comment">Comment:</label>
-            <textarea id="comment" name="comment" rows="4" placeholder="Write a comment (optional)...">{% if user_review and user_review.comment %}{{ user_review.comment }}{% endif %}</textarea>
+      </div>
+
+      <!--- edit mode when no user review or when editing review -->
+      <div class="review-card" id="reviewEdit" {% if user_review %}style="display: none"{% endif %}>
+        <div class="avatar">{{ session["name"][0] | upper }}</div>
+        <div class="review-content">
+          <span class="review-username">{{ session["name"] }}</span>
+          <!-- clickable stars-->
+          <div class="star-rating" id="starRating">
+            {% for i in range(1, 6) %}
+              <i class="fa fa-star" data-value="{{ i }}"></i>
+            {% endfor %}
+            <input type="hidden" name="stars" id="starsInput" value="{{ user_review.stars if user_review else '' }}" />
+          </div>
+          <textarea id="comment" rows="4" placeholder="Write a comment (optional)...">{% if user_review and user_review.comment %}{{ user_review.comment }}{% endif %}</textarea>
+          <div class="form-actions">
+            <button type="button" class="save-btn" onclick="saveReview()">Save</button>
+
+            {% if user_review %}
+              <button type="button" class="cancel-btn" onclick="toggleEdit('review')">Cancel</button>
+            {% endif %}
+          </div>
         </div>
-        <button type="button" class="save-review-btn" onclick="saveReview()">Save review</button>
-    </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- other people's reviews -->
+  <section class="reviews-list-section">
+    <h2>Reviews ({{ reviews | length }})</h2>
+
+    {% if reviews %}
+      {% for review in reviews %}
+      <div class="review-item">
+        <div class="review-card">
+          <div class="avatar">{{ review.display_name[0] | upper }}</div>
+          <div class="review-content">
+            <div class="review-header">
+              <span class="review-username">{{ review.display_name }}</span>
+              <div class="star-display">
+                {% if review.stars %}
+                  {% for i in range(1, 6) %}
+                    <i class="fa fa-star {% if review.stars >= i %}active{% endif %}"></i>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+            <span class="review-time">{% if review.updated_at %}{{ review.updated_at.strftime('%b %d, %Y %H:%M') }}{% endif %}</span>
+            {% if review.comment %}
+              <p class="review-text">{{ review.comment }}</p>
+            {% endif %}
+            <!-- reply to review -->
+            <button type="button" class="reply-btn" onclick="toggleReplyForm('{{ review._id }}')">Reply</button>
+
+            <!--- reply form hidden until click -->
+            <div class="reply-form" id="replyForm-{{ review._id }}" style="display: none">
+              <textarea id="replyText-{{ review._id }}" rows="2" placeholder="Write a reply..."></textarea>
+              <div class="form-actions">
+                <button type="button" class="save-btn" onclick="postComment('{{ review._id }}')">Post</button>
+                <button type="button" class="cancel-btn" onclick="toggleReplyForm('{{ review._id }}')">Cancel</button>
+              </div>
+            </div>
+
+            <!-- replies under current review -->
+            {% for comment in review.comments %}
+              {% if loop.index == 3 %}
+              <button type="button" class="show-replies-btn" onclick="toggleAllReplies('{{ review._id }}')">
+                Show all replies ({{ (review.comments | length) - 2 }})
+              </button>
+              <div class="hidden-replies" id="hiddenReplies-{{ review._id }}" style="display: none">
+              {% endif %}
+              <div class="comment-card" id="commentCard-{{ comment._id }}">
+                <div class="avatar avatar-sm">{{ comment.display_name[0] | upper }}</div>
+                <div class="review-content">
+                  <div class="review-header">
+                    <span class="review-username">{{ comment.display_name }}</span>
+                    {% if comment.commenter_stars and comment.display_name != 'Anonymous' %}
+                    <div class="star-display star-sm">
+                      {% for i in range(1, 6) %}
+                        <i class="fa fa-star {% if comment.commenter_stars >= i %}active{% endif %}"></i>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <p class="review-text" id="commentText-{{ comment._id }}"><span class="reply-to-label">@{{ review.display_name }}</span>
+                  {{ comment.comment }}</p>
+                  <!--- hidden reply edit form -->
+                  <div class="comment-edit-form" id="commentEditForm-{{ comment._id }}" style="display: none">
+                    <textarea id="commentEditText-{{ comment._id }}" rows="2">{{ comment.comment }}</textarea>
+                    <div class="form-actions">
+                      <button type="button" class="save-btn" onclick="saveCommentEdit('{{ comment._id }}')">Save</button>
+                      <button type="button" class="cancel-btn" onclick="cancelCommentEdit('{{ comment._id }}')">Cancel</button>
+                    </div>
+                  </div>
+                  <span class="review-time">{% if comment.updated_at %}{{ comment.updated_at.strftime('%b %d, %Y %H:%M') }}{% endif %}</span>
+                  {% if comment.user_name == session["name"] %}
+                  <div class="comment-actions">
+                    <button type="button" class="reply-btn" onclick="startCommentEdit('{{ comment._id }}')">Edit</button>
+                    <button type="button" class="delete-text-btn" onclick="deleteComment('{{ comment._id }}')">Delete</button>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+            {% if review.comments | length > 2 %}
+              </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="no-reviews">No reviews yet. Be the first to share your thoughts!</p>
+    {% endif %}
+  </section>
 </div>
 
 <script>
-function showMessage(text, isError) {
+  // swaps display mode and edit mode for own review
+  function toggleEdit(type) {
+    const editDiv = document.getElementById(type + 'Edit');
+    const displayDiv = document.getElementById(type + 'Display');
+    if (editDiv.style.display === 'none') {
+      editDiv.style.display = 'flex';
+      displayDiv.style.display = 'none';
+    } else {
+      editDiv.style.display = 'none';
+      displayDiv.style.display = 'flex';
+    }
+  }
+
+  // show/hide replies
+  // stores original button text so we can swap back from "Hide replies"
+  function toggleAllReplies(id) {
+    const container = document.getElementById('hiddenReplies-' + id);
+    const btn = container.previousElementSibling;
+    if (container.style.display === 'none') {
+      container.style.display = 'block';
+      btn.textContent = 'Hide replies';
+    } else {
+      container.style.display = 'none';
+      btn.textContent = btn.dataset.original;
+    }
+  }
+
+  // save "Show all replies (N)" text on page load
+  document.querySelectorAll('.show-replies-btn').forEach(function(btn) {
+    btn.dataset.original = btn.textContent.trim();
+  });
+
+  // toggle reply form
+  function toggleReplyForm(reviewId) {
+    const form = document.getElementById('replyForm-' + reviewId);
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // clickable stars
+  document.querySelectorAll('#starRating .fa-star').forEach(function(star) {
+    star.addEventListener('click', function() {
+      const val = parseInt(this.dataset.value);
+      document.getElementById('starsInput').value = val;
+      document.querySelectorAll('#starRating .fa-star').forEach(function(s) {
+        if (parseInt(s.dataset.value) <= val) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // initialize stars and own review
+  (function() {
+    const saved = document.getElementById('starsInput').value;
+    if (saved) {
+      const val = parseInt(saved);
+      document.querySelectorAll('#starRating .fa-star').forEach(function(s) {
+        if (parseInt(s.dataset.value) <= val) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+    }
+  })();
+
+  function showMessage(text, isError) {
     const messageDisplay = document.getElementById('messageDisplay');
     const messageText = document.getElementById('messageText');
     if (!messageDisplay || !messageText) return;
@@ -34,37 +294,150 @@ function showMessage(text, isError) {
     messageDisplay.style.display = 'flex';
     messageDisplay.style.backgroundColor = isError ? '#f44336' : '#4caf50';
     setTimeout(function() { messageDisplay.style.display = 'none'; }, 3000);
-}
+  }
 
-async function saveReview() {
+  async function saveReview() {
     const movieId = document.querySelector('.movie-detail').dataset.movieId;
-    const starsInput = document.querySelector('input[name="stars"]:checked');
+    const starsValue = document.getElementById('starsInput').value;
     const comment = document.getElementById('comment').value.trim();
 
-    if (!starsInput) {
-        showMessage('Please select a star rating (1-5).', true);
-        return;
+    if (!starsValue) {
+      showMessage('Please select a star rating (1-5).', true);
+      return;
     }
 
-    const stars = parseInt(starsInput.value, 10);
+    const stars = parseInt(starsValue, 10);
 
     try {
-        const response = await fetch('/api/movie/' + movieId + '/review', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stars: stars, comment: comment })
-        });
-        const data = await response.json();
+      const response = await fetch('/api/movie/' + movieId + '/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stars: stars, comment: comment })
+      });
+      const data = await response.json();
 
-        if (data.success) {
-            showMessage(data.message || 'Review saved.');
-        } else {
-            showMessage(data.message || 'Failed to save review.', true);
-        }
+      if (data.success) {
+        showMessage(data.message || 'Review saved.');
+        // reload to update everything
+        setTimeout(function() { location.reload(); }, 1000);
+      } else {
+        showMessage(data.message || 'Failed to save review.', true);
+      }
     } catch (err) {
-        showMessage('Error saving review. Please try again.', true);
-        console.error(err);
+      showMessage('Error saving review. Please try again.', true);
+      console.error(err);
     }
-}
+  }
+
+  async function deleteReview(reviewId) {
+    if (!confirm('Delete this review? All replies will also be deleted.')) return;
+
+    try {
+      const response = await fetch('/api/review/' + reviewId + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('Review deleted.');
+        location.reload();
+      } else {
+        showMessage(data.message || 'Failed to delete review.', true);
+      }
+    } catch (err) {
+      showMessage('Error deleting review.', true);
+    }
+  }
+
+  // reply to review
+  async function postComment(replyToId) {
+    const movieId = document.querySelector('.movie-detail').dataset.movieId;
+    const textarea = document.getElementById('replyText-' + replyToId);
+    const commentText = textarea.value.trim();
+
+    if (!commentText) {
+      showMessage('Comment cannot be empty.', true);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/movie/' + movieId + '/comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: commentText, reply_to: replyToId })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage(data.message || 'Comment posted!');
+        location.reload();
+      } else {
+        showMessage(data.message || 'Failed to post comment.', true);
+      }
+    } catch (err) {
+      showMessage('Error posting comment.', true);
+    }
+  }
+
+  // edit comment
+  function startCommentEdit(commentId) {
+    document.getElementById('commentText-' + commentId).style.display = 'none';
+    document.getElementById('commentEditForm-' + commentId).style.display = 'block';
+  }
+
+  function cancelCommentEdit(commentId) {
+    document.getElementById('commentEditForm-' + commentId).style.display = 'none';
+    document.getElementById('commentText-' + commentId).style.display = 'block';
+  }
+
+  async function saveCommentEdit(commentId) {
+    const newText = document.getElementById('commentEditText-' + commentId).value.trim();
+
+    if (!newText) {
+      showMessage('Comment cannot be empty.', true);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/comment/' + commentId + '/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: newText })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('Comment updated!');
+        location.reload();
+      } else {
+        showMessage(data.message || 'Failed to update comment.', true);
+      }
+    } catch (err) {
+      showMessage('Error updating comment.', true);
+    }
+  }
+
+  // delete comment with confirmation
+  async function deleteComment(commentId) {
+    if (!confirm('Delete this comment?')) return;
+
+    try {
+      const response = await fetch('/api/comment/' + commentId + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('Comment deleted.');
+        location.reload();
+      } else {
+        showMessage(data.message || 'Failed to delete comment.', true);
+      }
+    } catch (err) {
+      showMessage('Error deleting comment.', true);
+    }
+  }
 </script>
 {% endblock %}
