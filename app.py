@@ -529,9 +529,12 @@ def get_movie_reviews(movie_id):
 def my_reviews():
     if "name" not in session:
         return redirect(url_for("login"))
-    reviews = list(reviews_collection.find({"user_name": session["name"]}))
-    return render_template("my_reviews.html", reviews=reviews)
-
+    user_reviews = list(reviews_collection.find({"user_name": session["name"], "type": {"$ne": "comment"}}).sort("updated_at", -1))
+    movie_ids = {r["movie_id"] for r in user_reviews}
+    movies_byid = {m["_id"]: m for m in db.movies.find({"_id": {"$in": list(movie_ids)}})}
+    for r in user_reviews:
+        r["movie"] = movies_byid.get(r["movie_id"])
+    return render_template("my_reviews.html", reviews=user_reviews)
 
 # Search
 @app.route("/search")

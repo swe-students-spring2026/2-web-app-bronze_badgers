@@ -1,12 +1,40 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+{% block content %}
 <div class="review-container">
   <h1>My Reviews</h1>
-  {% if reviews %} {% for review in reviews %}
-  <div class="movie-card">
-    <p>Rating: {{ review.stars }} ⭐</p>
-    <p>{{ review.comment }}</p>
-  </div>
-  {% endfor %} {% else %}
-  <p>You haven't reviewed any movies yet.</p>
+
+  {% if reviews %}
+    {% for review in reviews %}
+      <div class="movie-card">
+        {% if review.movie %}
+          <h2>
+            <a href="{{ url_for('movie_detail', movie_id=review.movie._id) }}">
+              {{ review.movie.title }}
+            </a>
+          </h2>
+          <p class="movie-meta">
+            {{ review.movie.year }}
+            {% if review.movie.genres %} • {{ review.movie.genres | join(', ') }}{% endif %}
+          </p>
+        {% endif %}
+        <p>
+          <strong>Your rating:</strong>
+          {{ review.stars }} ⭐
+        </p>
+        {% if review.updated_at %}
+          <p class="timestamp">
+            <small>Last updated: {{ review.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+          </p>
+        {% endif %}
+        {% if review.comment %}
+          <p><strong>Your review:</strong> {{ review.comment }}</p>
+        {% else %}
+          <p><em>No text review, rating only.</em></p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>You haven't reviewed any movies yet.</p>
+  {% endif %}
 </div>
-{% endif %} {% endblock %}
+{% endblock %}
