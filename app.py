@@ -7,6 +7,7 @@ from flask_bcrypt import Bcrypt
 import certifi
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
+from collections import defaultdict
 
 load_dotenv()
 
@@ -262,9 +263,15 @@ def update_privacy():
         {"$set": {"is_anonymous": is_anonymous, "private_comment": private_comment}}
     )
 
+    # also updates all reviews of the user on setting change - using denormalisation (better to do it now then when rendering page)
+    db.reviews.update_many(
+        {"user_name": session["name"]},
+        {"$set": {"is_anonymous": is_anonymous, "private_comment": private_comment}}
+    )
+
     return jsonify({"success": True, "message": "Privacy settings updated!"})
 
-# Movie detail page (rate and comment)
+# Movie detail page, reviews ratings and comments
 @app.route("/movie/<movie_id>")
 def movie_detail(movie_id):
     if "name" not in session:
@@ -279,48 +286,222 @@ def movie_detail(movie_id):
     if not movie:
         flash("Movie not found", "danger")
         return redirect(url_for("home"))
-    user_review = reviews_collection.find_one({"user_name": session["name"], "movie_id": oid})
-    return render_template("movie_detail.html", movie=movie, user_review=user_review)
+
+    # Current user's review (exclude comments)
+    user_review = reviews_collection.find_one({
+        "user_name": session["name"], "movie_id": oid, "type": {"$ne": "comment"}
+    })
+
+    # all reviews with privacy filter
+    all_reviews = list(reviews_collection.find({
+        "movie_id": oid,
+        "type": {"$ne": "comment"},
+        "user_name": {"$ne": session["name"]},
+        "$or": [
+            {"private_comment": {"$ne": True}},
+            {"user_name": session["name"]}
+        ]
+    }).sort("updated_at", -1))
+
+    # all coments with privacy filter
+    all_comments = list(reviews_collection.find({
+        "movie_id": oid,
+        "type": "comment",
+        "$or": [
+            {"private_comment": {"$ne": True}},
+            {"user_name": session["name"]}
+        ]
+    }).sort("updated_at", 1))
+
+    # group comments by parent id
+    comment_map = defaultdict(list)
+    for c in all_comments:
+        comment_map[c["reply_to"]].append(c)
+
+    star_lookup = {}
+    for r in all_reviews:
+        star_lookup[r["user_name"]] = r.get("stars")
+    if user_review:
+        star_lookup[session["name"]] = user_review.get("stars")
+
+    # attach comments to each reviews
+    for review in all_reviews:
+        review["comments"] = comment_map.get(review["_id"], [])
+        if review.get("is_anonymous") and review["user_name"] != session["name"]:
+            review["display_name"] = "Anonymous"
+        else:
+            review["display_name"] = review["user_name"]
+        for comment in review["comments"]:
+            if comment.get("is_anonymous") and comment["user_name"] != session["name"]:
+                comment["display_name"] = "Anonymous"
+            else:
+                comment["display_name"] = comment["user_name"]
+            comment["commenter_stars"] = star_lookup.get(comment["user_name"])
+
+    # Attach comments to user's own review too
+    if user_review:
+        user_review["comments"] = comment_map.get(user_review["_id"], [])
+        for comment in user_review["comments"]:
+            if comment.get("is_anonymous") and comment["user_name"] != session["name"]:
+                comment["display_name"] = "Anonymous"
+            else:
+                comment["display_name"] = comment["user_name"]
+            comment["commenter_stars"] = star_lookup.get(comment["user_name"])
+
+    return render_template("movie_detail.html", movie=movie, user_review=user_review, reviews=all_reviews)
 
 
-#Save Review + Comment
+#Save Review (add and edit)
 @app.route("/api/movie/<movie_id>/review", methods=["POST"])
 def save_review(movie_id):
     if "name" not in session:
         return jsonify({"success": False, "message": "Not authenticated"}), 401
+
+    oid = ObjectId(movie_id)
+    data = request.get_json()
+    stars = data.get("stars")
+    comment = data.get("comment", "").strip()
+
+    user = users_collection.find_one({"name": session["name"]})
+
+    review_doc = {
+        "user_name": session["name"],
+        "movie_id": oid,
+        "type": "review",
+        "stars": stars,
+        "comment": comment,
+        "is_anonymous": user.get("is_anonymous", False),
+        "private_comment": user.get("private_comment", False),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    reviews_collection.update_one(
+        {"user_name": session["name"], "movie_id": oid, "type": {"$ne": "comment"}},
+        {"$set": review_doc},
+        upsert=True
+    )
+
+    # update average score - only count reviews, not comments
+    pipeline = [
+        {"$match": {"movie_id": oid, "type": {"$ne": "comment"}}},
+        {"$group": {"_id": None, "avg": {"$avg": "$stars"}, "count": {"$sum": 1}}}
+    ]
+    result = list(reviews_collection.aggregate(pipeline))
+    if result:
+        db.movies.update_one(
+            {"_id": oid},
+            {"$set": {
+                "avg_rating": round(result[0]["avg"], 1),
+                "review_count": result[0]["count"]
+            }}
+        )
+    return jsonify({"success": True, "message": "Review saved successfully"}), 200
+
+
+# Reply (a comment) to a review
+@app.route("/api/movie/<movie_id>/comment", methods=["POST"])
+def post_comment(movie_id):
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+
+    oid = ObjectId(movie_id)
+    data = request.get_json()
+    comment_text = data.get("comment", "").strip()
+    reply_to = data.get("reply_to")
+
+    if not comment_text:
+        return jsonify({"success": False, "message": "Comment cannot be empty"}), 400
+
+    user = users_collection.find_one({"name": session["name"]})
+
+    comment_doc = {
+        "user_name": session["name"],
+        "movie_id": oid,
+        "type": "comment",
+        "stars": None,
+        "comment": comment_text,
+        "reply_to": ObjectId(reply_to),
+        "is_anonymous": user.get("is_anonymous", False),
+        "private_comment": user.get("private_comment", False),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    reviews_collection.insert_one(comment_doc)
+
+    return jsonify({"success": True, "message": "Comment posted!"}), 200
+
+# Edit a reply / comment
+@app.route("/api/comment/<comment_id>/edit", methods=["POST"])
+def edit_comment(comment_id):
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+
+    data = request.get_json()
+    new_text = data.get("comment", "").strip()
+
+    if not new_text:
+        return jsonify({"success": False, "message": "Comment cannot be empty"}), 400
+
+    result = reviews_collection.update_one(
+        {"_id": ObjectId(comment_id), "user_name": session["name"], "type": "comment"},
+        {"$set": {"comment": new_text, "updated_at": datetime.now(timezone.utc)}}
+    )
+
+    if result.modified_count > 0:
+        return jsonify({"success": True, "message": "Comment updated!"}), 200
+    return jsonify({"success": False, "message": "Comment not found or not yours"}), 404
+
+# Delete a comment / reply
+@app.route("/api/comment/<comment_id>/delete", methods=["POST"])
+def delete_comment(comment_id):
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+
+    result = reviews_collection.delete_one(
+        {"_id": ObjectId(comment_id), "user_name": session["name"], "type": "comment"}
+    )
+
+    if result.deleted_count > 0:
+        return jsonify({"success": True, "message": "Comment deleted!"}), 200
+    return jsonify({"success": False, "message": "Comment not found or not yours"}), 404
+
+
+# Delete a review
+## delete all of its reply and recalculate movie average rating
+@app.route("/api/review/<review_id>/delete", methods=["POST"])
+def delete_review(review_id):
+    if "name" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+
+    oid = ObjectId(review_id)
+    review = reviews_collection.find_one({"_id": oid, "user_name": session["name"], "type": {"$ne": "comment"}})
+
+    if not review:
+        return jsonify({"success": False, "message": "Review not found or not yours"}), 404
+
+    movie_id = review["movie_id"]
+
+    # delete all replies
+    reviews_collection.delete_many({"reply_to": oid})
+    reviews_collection.delete_one({"_id": oid})
+
+    # recalculate average
+    pipeline = [
+        {"$match": {"movie_id": movie_id, "type": {"$ne": "comment"}}},
+        {"$group": {"_id": None, "avg": {"$avg": "$stars"}, "count": {"$sum": 1}}}
+    ]
+    result = list(reviews_collection.aggregate(pipeline))
+    if result:
+        db.movies.update_one(
+            {"_id": movie_id},
+            {"$set": {"avg_rating": round(result[0]["avg"], 1), "review_count": result[0]["count"]}}
+        )
     else:
-        oid = ObjectId(movie_id)
-        data = request.get_json()
-        stars = data.get("stars")
-        comment = data.get("comment", "").strip()
-        review_doc = {
-            "user_name": session["name"],
-            "movie_id": oid,
-            "stars": stars,
-            "comment": comment,
-            "updated_at": datetime.now(timezone.utc)
-        }
-        reviews_collection.update_one(
-            {"user_name": session["name"], "movie_id": oid},
-            {"$set": review_doc},
-            upsert=True
+        # last review deleted
+        db.movies.update_one(
+            {"_id": movie_id},
+            {"$set": {"avg_rating": None, "review_count": 0}}
         )
 
-        # update average score for movie so does not have to calculate on load
-        pipeline = [
-            {"$match": {"movie_id": oid}},
-            {"$group": {"_id": None, "avg": {"$avg": "$stars"}, "count": {"$sum": 1}}}
-        ]
-        result = list(reviews_collection.aggregate(pipeline))
-        if result:
-            db.movies.update_one(
-                {"_id": oid},
-                {"$set": {
-                    "avg_rating": round(result[0]["avg"], 1),
-                    "review_count": result[0]["count"]
-                }}
-            )
-        return jsonify({"success": True, "message": "Review saved successfully"}), 200
+    return jsonify({"success": True, "message": "Review deleted!"}), 200
 
 #Display reviews/comments for a movie
 @app.route("/api/movie/<movie_id>", methods=["GET"])
