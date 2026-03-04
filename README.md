@@ -26,6 +26,9 @@ A simple, fast movie rating system where users search for movies, rate them out 
 
 8. As a user, I want to edit or delete my comment if I make a typo or change my mind.
 
+9. As a user, I want to see the average rating and total number of ratings for each movie so that I can quickly judge its overall popularity and quality.
+
+10. As a user, I want to sort movies by newest releases, highest rated, or most reviewed so that I can discover movies more efficiently.
 
 
 ## Steps necessary to run the software

@@ -20,6 +20,7 @@ client = MongoClient(os.getenv("MONGO_URI"), tlsCAFile=certifi.where())
 db = client[os.getenv("MONGO_DBNAME")]
 users_collection = db.users  # we'll store login users here
 reviews_collection = db.reviews  # we'll store movie reviews here
+notifications_collection = db.notifications # we'll store notifications here
 
 
 
@@ -424,7 +425,20 @@ def post_comment(movie_id):
         "private_comment": user.get("private_comment", False),
         "updated_at": datetime.now(timezone.utc)
     }
-    reviews_collection.insert_one(comment_doc)
+    result = reviews_collection.insert_one(comment_doc)
+
+    # Create notification for the review owner (don't notify yourself)
+    parent_review = reviews_collection.find_one({"_id": ObjectId(reply_to)})
+    if parent_review and parent_review["user_name"] != session["name"]:
+        notifications_collection.insert_one({
+            "recipient": parent_review["user_name"],
+            "sender": session["name"],
+            "review_id": ObjectId(reply_to),
+            "movie_id": oid,
+            "comment_id": result.inserted_id,
+            "is_read": False,
+            "created_at": datetime.now(timezone.utc)
+        })
 
     return jsonify({"success": True, "message": "Comment posted!"}), 200
 
@@ -529,12 +543,44 @@ def get_movie_reviews(movie_id):
 def my_reviews():
     if "name" not in session:
         return redirect(url_for("login"))
-    user_reviews = list(reviews_collection.find({"user_name": session["name"], "type": {"$ne": "comment"}}).sort("updated_at", -1))
-    movie_ids = {r["movie_id"] for r in user_reviews}
+    user_entries = list(reviews_collection.find({"user_name": session["name"]}).sort("updated_at", -1))
+    movie_ids = {r["movie_id"] for r in user_entries}
     movies_byid = {m["_id"]: m for m in db.movies.find({"_id": {"$in": list(movie_ids)}})}
-    for r in user_reviews:
+    # For replies, look up the parent review to get the original reviewer's name
+    reply_to_ids = [r["reply_to"] for r in user_entries if r.get("type") == "comment" and r.get("reply_to")]
+    parents_byid = {}
+    if reply_to_ids:
+        parents_byid = {p["_id"]: p for p in reviews_collection.find({"_id": {"$in": reply_to_ids}})}
+    for r in user_entries:
         r["movie"] = movies_byid.get(r["movie_id"])
-    return render_template("my_reviews.html", reviews=user_reviews)
+        if r.get("type") == "comment" and r.get("reply_to"):
+            parent = parents_byid.get(r["reply_to"])
+            r["parent_user"] = parent["user_name"] if parent else "Unknown"
+    return render_template("my_reviews.html", reviews=user_entries)
+
+# Notifications
+@app.route("/notifications")
+def notifications():
+    if "name" not in session:
+        return redirect(url_for("login"))
+    notifs = list(notifications_collection.find({"recipient": session["name"]}).sort("created_at", -1).limit(50))
+    movie_ids = {n["movie_id"] for n in notifs}
+    movies_byid = {m["_id"]: m for m in db.movies.find({"_id": {"$in": list(movie_ids)}})}
+    for n in notifs:
+        n["movie"] = movies_byid.get(n["movie_id"])
+    # Mark all as read
+    notifications_collection.update_many(
+        {"recipient": session["name"], "is_read": False},
+        {"$set": {"is_read": True}}
+    )
+    return render_template("notifications.html", notifications=notifs)
+
+@app.route("/api/notifications/count")
+def notifications_count():
+    if "name" not in session:
+        return jsonify({"count": 0})
+    count = notifications_collection.count_documents({"recipient": session["name"], "is_read": False})
+    return jsonify({"count": count})
 
 # Search
 @app.route("/search")
