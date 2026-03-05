@@ -546,6 +546,38 @@ input.main-search {
   pointer-events: none;
 }
 
+/* Notification Bell */
+.notif-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #57068c;
+  font-size: 20px;
+  padding: 4px;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background: #e53935;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.notif-unread {
+  border-left: 3px solid #57068c;
+}
+
 .avatar {
   width: 36px;
   height: 36px;

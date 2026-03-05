@@ -19,7 +19,22 @@
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
     </form>
   </div>
+  <a href="{{ url_for('notifications') }}" class="notif-bell">
+    <i class="fa-solid fa-bell"></i>
+    <span class="notif-badge" id="notifBadge" style="display:none"></span>
+  </a>
 </div>
+<script>
+  fetch('/api/notifications/count')
+    .then(r => r.json())
+    .then(data => {
+      if (data.count > 0) {
+        const badge = document.getElementById('notifBadge');
+        badge.textContent = data.count;
+        badge.style.display = 'flex';
+      }
+    });
+</script>
 <!-- Filter Tabs -->
 <div class="filter-bar">
   <i

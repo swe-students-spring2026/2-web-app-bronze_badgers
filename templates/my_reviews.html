@@ -3,9 +3,16 @@
 <div class="review-container">
   <h1>My Reviews</h1>
 
+  <div class="filter-bar">
+    <i class="fa-solid fa-filter filter-icon"></i>
+    <a href="#" class="filter-tab active" data-text="All" onclick="filterEntries('all')">All</a>
+    <a href="#" class="filter-tab" data-text="Reviews" onclick="filterEntries('review')">Reviews</a>
+    <a href="#" class="filter-tab" data-text="Replies" onclick="filterEntries('reply')">Replies</a>
+  </div>
+
   {% if reviews %}
     {% for review in reviews %}
-      <div class="movie-card">
+      <div class="movie-card review-entry" data-type="{{ 'reply' if review.type == 'comment' else 'review' }}">
         {% if review.movie %}
           <h2>
             <a href="{{ url_for('movie_detail', movie_id=review.movie._id) }}">
@@ -17,17 +24,26 @@
             {% if review.movie.genres %} • {{ review.movie.genres | join(', ') }}{% endif %}
           </p>
         {% endif %}
+
+        {% if review.type == "comment" %}
+          <p><strong>Reply</strong>{% if review.parent_user %} — in reply to {{ review.parent_user }}{% endif %}</p>
+        {% else %}
+          <p><strong>Review</strong></p>
+        {% endif %}
+
+        {% if review.stars %}
         <p>
           <strong>Your rating:</strong>
           {{ review.stars }} ⭐
         </p>
+        {% endif %}
         {% if review.updated_at %}
           <p class="timestamp">
             <small>Last updated: {{ review.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
           </p>
         {% endif %}
         {% if review.comment %}
-          <p><strong>Your review:</strong> {{ review.comment }}</p>
+          <p><strong>{% if review.type == "comment" %}Your reply:{% else %}Your review:{% endif %}</strong> {{ review.comment }}</p>
         {% else %}
           <p><em>No text review, rating only.</em></p>
         {% endif %}
@@ -37,4 +53,22 @@
     <p>You haven't reviewed any movies yet.</p>
   {% endif %}
 </div>
+
+<script>
+  function filterEntries(type) {
+    event.preventDefault();
+    document.querySelectorAll('.filter-tab').forEach(function(tab) {
+      tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    document.querySelectorAll('.review-entry').forEach(function(entry) {
+      if (type === 'all' || entry.dataset.type === type) {
+        entry.style.display = '';
+      } else {
+        entry.style.display = 'none';
+      }
+    });
+  }
+</script>
 {% endblock %}
