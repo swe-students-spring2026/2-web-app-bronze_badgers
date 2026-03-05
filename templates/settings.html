@@ -142,12 +142,6 @@
     <h2>Account Actions</h2>
 
     <button
-      class="action-btn notification-btn"
-      onclick="openNotificationSettings()"
-    >
-      Notification Settings
-    </button>
-    <button
     class="action-btn privacy-btn"
     onclick="openPrivacySettings()"
   >
@@ -322,10 +316,6 @@
       showMessage("Error updating password. Please try again.", true);
       console.error("Error:", error);
     }
-  }
-
-  function openNotificationSettings() {
-    // TODO: Implement notification settings
   }
 
   function openPrivacySettings() {
