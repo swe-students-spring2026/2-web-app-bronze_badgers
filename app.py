@@ -517,27 +517,6 @@ def delete_review(review_id):
 
     return jsonify({"success": True, "message": "Review deleted!"}), 200
 
-#Display reviews/comments for a movie
-@app.route("/api/movie/<movie_id>", methods=["GET"])
-def get_movie_reviews(movie_id):
-    if "name" not in session:
-        return jsonify({"success": False, "message": "Not authenticated"}), 401
-    try:
-        oid = ObjectId(movie_id)
-        reviews_cursor = reviews_collection.find({"movie_id": oid})
-        reviews = []
-        for r in reviews_cursor:
-            reviews.append({
-                "user_name": r.get("user_name"),
-                "movie_id": str(r["movie_id"]),
-                "stars": r.get("stars"),
-                "comment": r.get("comment", ""),
-                "updated_at": r["updated_at"].isoformat() if r.get("updated_at") else None
-            })
-        return jsonify({"success": True, "reviews": reviews}), 200
-    except:
-        return jsonify({"success": False, "message": "Invalid movie ID"}), 404
-
 # My Reviews
 @app.route("/my-reviews")
 def my_reviews():
