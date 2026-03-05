@@ -134,3 +134,5 @@ You will be redirected to the login page. If you don't have an account yet, you 
 ## Task boards
 
 [Link to Sprint 1 Task Board](https://github.com/orgs/swe-students-spring2026/projects/16)
+
+[Link to Sprint 2 Task Board](https://github.com/orgs/swe-students-spring2026/projects/59)
